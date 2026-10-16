@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>FeedTripwire — Catch risky supplier feed changes before import</title>
+  <meta name="description" content="Compare supplier CSV exports, detect stock drops, disappearing SKUs and abnormal price changes. Free browser-only preview."/>
+  <style>
+    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:#f3f5fb;background:#0a1020;line-height:1.48}
+    *{box-sizing:border-box}body{margin:0}button,input{font:inherit}a{color:#8fcfff}.wrap{max-width:1120px;margin:auto;padding:0 22px}
+    header{border-bottom:1px solid #25304b;background:#0b1224}.head{display:flex;justify-content:space-between;align-items:center;min-height:78px}.brand{font-weight:900;font-size:22px;letter-spacing:-.7px}.brand strong{color:#66e1c7}.tag{font-size:12px;font-weight:750;color:#8ddfcf;border:1px solid #2d746b;border-radius:40px;padding:7px 12px}
+    .hero{padding:60px 0 31px}.eyebrow{color:#79e1d0;text-transform:uppercase;letter-spacing:2px;font-size:12px;font-weight:750}.hero h1{max-width:780px;font-size:clamp(32px,5vw,58px);line-height:1.07;letter-spacing:-2.8px;margin:17px 0}.hero p{font-size:17px;color:#b3bfd5;max-width:690px}.hero strong{color:#fff}
+    .stage{background:#121c32;border:1px solid #31425c;border-radius:20px;padding:24px;margin-bottom:21px;box-shadow:0 24px 70px #0004}.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.upload{display:block;background:#0c1427;border:1px dashed #53667e;border-radius:13px;padding:26px 21px;cursor:pointer;min-height:145px}.upload:hover{border-color:#66e1c7}.upload input{margin-top:15px;max-width:100%;font-size:13px}.upload .num{font-weight:800;font-size:13px;color:#73ddc8}.upload h3{font-size:16px;margin:6px 0}.upload p{font-size:12px;color:#9faecc;margin:0}.controls{display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin-top:21px}.btn{background:#69e1c7;color:#06141c;border:none;border-radius:11px;padding:12px 19px;font-weight:850;cursor:pointer}.btn:hover{background:#96fbe4}.btn.secondary{background:#243454;color:#e8f1fc}.btn.secondary:hover{background:#32476c}.btn:disabled{opacity:.45;cursor:not-allowed}.privacy{color:#99acc8;font-size:13px}.error{padding:13px 16px;background:#49222c;border:1px solid #944552;border-radius:10px;color:#ffe1e5;margin:12px 0;display:none}
+    .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}.metric{background:#101a2e;border:1px solid #2b3950;border-radius:13px;padding:18px}.metric span{color:#9cacc6;font-size:12px;display:block}.metric strong{font-size:30px;letter-spacing:-1px}.danger{color:#ffab98!important}.status{padding:13px 16px;border-radius:12px;background:#12362f;border:1px solid #316857;font-size:14px;color:#c7ffed}.status.alert{background:#41232a;border-color:#885054;color:#ffdbdb}
+    .sectionHead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.sectionHead h2{font-size:22px}.tableWrap{overflow:auto;background:#10192c;border:1px solid #293750;border-radius:14px}table{border-collapse:collapse;width:100%;font-size:13px;text-align:left}th{color:#9eb0cb;background:#17223a;font-size:12px;letter-spacing:.3px}th,td{border-bottom:1px solid #25334a;padding:12px 14px;white-space:normal;word-break:break-word;vertical-align:top}tr:last-child td{border-bottom:0}.severity{font-size:11px;font-weight:850;padding:4px 7px;border-radius:6px;white-space:nowrap}.severity.Critical{background:#6c2936;color:#ffd9de}.severity.High{background:#574027;color:#ffe0ae}.severity.Medium{background:#263b5e;color:#bddcff}.muted{color:#9cabbd}.footer{border-top:1px solid #273449;margin-top:60px;padding:24px 0 40px;color:#99a9bf;font-size:12px}#report{display:none}.small{color:#95a7c0;font-size:12px}.pill{padding:6px 10px;border:1px solid #3d526b;border-radius:99px;font-size:11px;color:#b7c6d9}.icon{margin-right:6px}
+    @media(max-width:680px){.row{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.hero{padding-top:35px}.hero h1{letter-spacing:-1.4px}.stage{padding:15px}}
+  </style>
+</head>
+<body>
+<header><div class="wrap head"><div class="brand">FEED<strong>TRIPWIRE</strong></div><div class="tag">Free proof-of-concept · v0.1</div></div></header>
+<main class="wrap">
+  <section class="hero"><div class="eyebrow">Supplier feed quality control</div><h1>Catch dangerous catalog changes <span style="color:#68e0c8">before</span> they reach your store.</h1><p>A supplier CSV can quietly wipe stock, erase SKUs or introduce wrong prices. Compare <strong>yesterday's export with today's</strong> and see what's worth checking — before running your store import.</p></section>
+  <section class="stage" aria-label="Compare supplier files">
+    <div class="row">
+      <label class="upload"><span class="num">01 · BASELINE</span><h3>Previous supplier export</h3><p>CSV or TSV with SKU/ID column (max 10 MB)</p><input id="beforeFile" type="file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values"/></label>
+      <label class="upload"><span class="num">02 · NEW VERSION</span><h3>Latest supplier export</h3><p>Prefer the same column names and SKU structure</p><input id="afterFile" type="file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values"/></label>
+    </div>
+    <div class="controls"><button id="analyze" class="btn">Compare feeds →</button><button id="demo" class="btn secondary">Try realistic demo</button><span class="privacy">🔒 Files are processed locally in this browser. No upload, no account, no tracking.</span></div>
+    <div id="error" class="error" role="alert"></div>
+  </section>
+  <section id="report" aria-live="polite">
+    <div id="status" class="status"></div>
+    <div id="metrics" class="metrics"></div>
+    <div class="sectionHead"><h2>Changes worth checking</h2><button id="export" class="btn secondary">Export CSV report ↓</button></div>
+    <p id="scanFields" class="small"></p>
+    <div class="tableWrap"><table><thead><tr><th>Severity</th><th>Issue</th><th>SKU / Scope</th><th>Before</th><th>After</th><th>Why review it</th></tr></thead><tbody id="results"></tbody></table></div>
+    <p class="small">Warnings flag unusual changes, not confirmed errors. Intentional price and inventory changes can be legitimate. This prototype does not connect to WooCommerce, verify remote URLs, change inventory, send alerts or inspect XML.</p>
+  </section>
+  <section class="stage" style="margin-top:30px"><h2 style="margin:0 0 7px">Built for ecommerce teams using supplier files</h2><p class="muted">A focused prototype to validate interest. Future direction, only if users ask for it: scheduled CSV/XML feed checks, alert thresholds by supplier, email notifications and history — without replacing your existing importer.</p><span class="pill">Potential paid SaaS feature — not active yet</span></section>
+</main>
+<footer class="footer"><div class="wrap">FeedTripwire is an independent prototype, not affiliated with WooCommerce, Shopify or Google. All results require human review.</div></footer>
+<script src="core.js"></script><script>
+(function(){
+  const $=id=>document.getElementById(id);let last=null;
+  function esc(s){return String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+  function err(message){$('error').textContent=message;$('error').style.display='block';}
+  function metric(title,val,highlight){return `<div class="metric"><span>${esc(title)}</span><strong class="${highlight?'danger':''}">${esc(val)}</strong></div>`;}
+  function render(r){
+    last=r; $('report').style.display='block';$('error').style.display='none';
+    $('status').className='status '+(r.hasCritical?'alert':'');
+    $('status').textContent=r.hasCritical?'⚠️ Potential high-impact changes detected. Review BEFORE you import.':'✓ Comparison complete. Review the detailed findings before importing.';
+    $('metrics').innerHTML=metric('Original SKUs',r.before)+metric('New SKUs',r.after)+metric('Disappeared',r.removed,r.removed>0)+metric('Price drops ≥ 40%',r.priceDrops,r.priceDrops>0);
+    $('scanFields').textContent=`${r.added} new SKUs · ${r.changed} SKUs with tracked field changes · ${r.stockOutFlips} stock-out events. Compared fields: ${r.scannedFields.join(', ') || 'none'} · ${r.issues.length} findings.`;
+    $('results').innerHTML=r.issues.length?r.issues.slice(0,600).map(x=>`<tr><td><span class="severity ${esc(x.level)}">${esc(x.level)}</span></td><td>${esc(x.type)}</td><td>${esc(x.sku)}</td><td>${esc(x.before||'—')}</td><td>${esc(x.after||'—')}</td><td class="muted">${esc(x.explanation)}</td></tr>`).join(''):'<tr><td colspan="6">No issues triggered by the checks in this prototype. This does not guarantee a safe import.</td></tr>';
+    $('report').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  const sampleOld = ['sku,price,stock,availability,gtin,image_link'];
+  const sampleNew = ['sku,price,stock,availability,gtin,image_link'];
+  for(let i=1;i<=20;i++){
+    const id='SKU-'+String(i).padStart(3,'0');
+    sampleOld.push(`${id},${(i*3+30).toFixed(2)},25,in_stock,123456789000${i},https://example.org/product-${i}.jpg`);
+    if(i>12)continue;
+    const price=i===2?'8.00':(i*3+30).toFixed(2);
+    const qty=(i===3||i===4)?'0':'25';
+    const av=i===3||i===4?'out_of_stock':'in_stock';
+    const gtin=i===5?'':`123456789000${i}`;
+    sampleNew.push(`${id},${price},${qty},${av},${gtin},https://example.org/product-${i}.jpg`);
+  }
+  sampleNew.push('SKU-021,39.99,12,in_stock,1111111111111,https://example.org/new.jpg');
+  $('demo').onclick=()=>{try{render(FeedTripwireCore.compareFeedFiles(sampleOld.join('\n'),sampleNew.join('\n')));}catch(e){err(e.message);}};
+  $('analyze').onclick=async()=>{
+    try{
+      const a=$('beforeFile').files[0],b=$('afterFile').files[0];
+      if(!a||!b){err('Choose two CSV/TSV exports, or click the demo button.');return;}
+      if(a.size>10*1024*1024||b.size>10*1024*1024){err('File limit: 10 MB per file in this prototype.');return;}
+      $('analyze').disabled=true;$('analyze').textContent='Comparing…';
+      const [aa,bb]=await Promise.all([a.text(),b.text()]);
+      render(FeedTripwireCore.compareFeedFiles(aa,bb));
+    }catch(e){err(e.message);}finally{$('analyze').disabled=false;$('analyze').textContent='Compare feeds →';}
+  };
+  $('export').onclick=()=>{
+    if(!last)return;const csv=FeedTripwireCore.exportIssuesCSV(last.issues);const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='feedtripwire-report.csv';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),2000);
+  };
+})();
+</script>
+</body></html>
